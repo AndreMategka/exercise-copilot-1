@@ -4,12 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  let messageHideTimeoutId;
+
   function showMessage(text, type) {
     messageDiv.textContent = text;
-    messageDiv.className = type;
+    messageDiv.className = `message ${type}`;
     messageDiv.classList.remove("hidden");
 
-    setTimeout(() => {
+    if (messageHideTimeoutId) {
+      clearTimeout(messageHideTimeoutId);
+    }
+
+    messageHideTimeoutId = setTimeout(() => {
       messageDiv.classList.add("hidden");
     }, 5000);
   }
@@ -34,21 +40,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const spotsLeft = details.max_participants - details.participants.length;
         const participantItems = details.participants.length
           ? details.participants
-              .map(
-                (participant) => `
+              .map((participant) => {
+                const escapeHtml = (value) =>
+                  String(value).replace(/[&<>"']/g, (ch) => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                  }[ch]));
+
+                const safeActivity = escapeHtml(name);
+                const safeParticipant = escapeHtml(participant);
+
+                return `
                   <li class="participant-item">
-                    <span class="participant-email">${participant}</span>
+                    <span class="participant-email">${safeParticipant}</span>
                     <button
                       type="button"
                       class="remove-participant-btn"
-                      data-activity="${name}"
-                      data-participant="${participant}"
-                      aria-label="Unregister ${participant}"
+                      data-activity="${safeActivity}"
+                      data-participant="${safeParticipant}"
+                      aria-label="Unregister ${safeParticipant}"
                       title="Unregister participant"
                     >&#128465;</button>
                   </li>
-                `
-              )
+                `;
+              })
               .join("")
           : '<li class="participant-empty">No participants yet</li>';
 
